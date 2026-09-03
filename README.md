@@ -1,0 +1,168 @@
+# Snake RL
+
+Reinforcement learning agent for the Snake game using a DQN-style neural agent implemented with **PyTorch**, replay, and a target network.
+
+---
+
+## Project Structure
+
+```
+.
+├── board.py        # Board, snake, apples, state, rewards
+├── agent.py        # BaseAgent, NNAgent, make/load helpers
+├── display.py      # Pygame graphical interface + headless mode
+├── main.py         # CLI entry point
+├── trainer.py      # Training loop and checkpointing
+├── models/         # Saved model checkpoints
+└── README.md
+```
+
+---
+
+## Rules (from spec)
+
+| Rule | Detail |
+|------|--------|
+| Board | 10 × 10 cells |
+| Apples | 2 green (grow), 1 red (shrink) |
+| Snake start | 3 cells, random |
+| Wall hit | Game over |
+| Self collision | Game over |
+| Length → 0 | Game over |
+
+---
+
+## State (Vision)
+
+The snake sees in **4 directions** from its head.  
+Each direction casts a ray and records the first entity encountered. The current length is also included in the state.
+
+**NN input vector** — 21 floats:  
+For each of 4 directions: `(dist_wall, dist_body, dist_green, dist_red)` + 4-bit one-hot direction + normalized length.
+
+---
+
+## Rewards
+
+| Event | Reward |
+|-------|--------|
+| Eat green apple | +10 |
+| Eat red apple | -9 |
+| Normal step | +0.1 |
+| Wall / self collision | -20 |
+| Length drops to 0 | -20 |
+
+---
+
+## Agents
+
+### NNAgent
+PyTorch DQN-style agent:
+- Architecture: `20 → 128 → 128 → 4`
+- ReLU activations
+- Experience replay buffer (10 000 transitions)
+- Fixed target network (updated every 500 steps)
+- Mini-batch training (batch size 64)
+- Adam optimizer with MSE loss
+- Uses CUDA automatically when available
+
+---
+
+## Usage
+
+### Train a new model
+
+```bash
+# Neural network, 1000 episodes, graphical display (normal speed)
+python main.py --episodes 1000 --model neural
+
+# Neural network, headless (fast), save every 500 eps
+python main.py --episodes 5000 --model neural --headless --save-every 500n.
+
+# Neural network, step-by-step mode (press SPACE to advance)
+python main.py --episodes 10 --model neural --speed step
+
+# Slow human-readable speed with terminal vision output
+python main.py --episodes 20 --model neural --speed slow
+```
+
+### Load and continue training
+
+```bash
+python main.py --episodes 1000 --load models/neural_ep20.json
+```
+
+### Evaluate (no learning)
+
+```bash
+python main.py --episodes 100 --load models/neural_ep20.json --no-learn --speed normal
+```
+
+When `--load` is provided, the checkpoint must be a neural model. Use `--model neural` when starting from scratch.
+
+### All CLI options
+
+```
+--episodes   N        Number of episodes (default: 500)
+--model      TYPE     neural (default: neural)
+--load       PATH     Load existing model
+--save       PATH     Save path (auto-named if omitted)
+--save-every N        Checkpoint every N episodes (default: 500)
+--speed      SPEED    fast | normal | slow | step (default: normal)
+--headless            No graphical display (training mode)
+--no-learn            Disable Q-update (evaluation mode)
+--log-every  N        Console log every N episodes (default: 50)
+--alpha      F        Learning rate (default: 0.001)
+--gamma      F        Discount factor (default: 0.95)
+--epsilon    F        Initial exploration (default: 1.0)
+--eps-decay  F        Epsilon decay per episode (default: 0.995)
+--eps-min    F        Minimum epsilon (default: 0.05)
+```
+
+### Checkpoints
+
+`trainer.py` saves checkpoints automatically every `--save-every` episodes and again at the end of training.
+If you do not pass `--save`, the default name is `models/<type>_ep<N>.json`.
+
+Neural checkpoints are saved with `torch.save()` and contain the model weights plus training metadata, even if the filename ends in `.json`.
+
+---
+
+## Model files
+
+Models are saved through the agent's `save()` method.
+
+- Neural checkpoints are saved as PyTorch checkpoints containing the model weights and training metadata.
+
+In both cases, the default filenames used by `main.py` are written under `models/`.
+
+---
+
+## Controls (graphical mode)
+
+| Key | Action |
+|-----|--------|
+| `Q` | Quit |
+| `SPACE` | Next step (step mode only) |
+
+---
+
+## Dependencies
+
+
+```bash
+source /goinfre/$USER/venv_snake/bin/activate
+
+pip install numpy pygame torch
+```
+# 1. Point pip cache away from home
+export PIP_CACHE_DIR=/goinfre/$USER/pip_cache
+
+# 2. Install pytorch into a virtualenv on goinfre
+python3 -m venv /goinfre/$USER/venv_snake
+
+# 3. Activate it
+source /goinfre/$USER/venv_snake/bin/activate
+
+# 4. Now install — nothing touches $HOME
+pip install torch numpy pygame

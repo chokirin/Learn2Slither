@@ -32,7 +32,7 @@ $$
 
 Here, $s$ is the current state, $a$ is the chosen action, $r$ is the reward, $s'$ is the next state, and $\gamma$ is the discount factor. The $(1 - done)$ term prevents the agent from estimating future rewards after the snake has died.
 
-The DQN minimizes the mean squared error between the predicted value for the chosen action and the Bellman target:
+The DQN minimizes the mean squared error(MSE) between the predicted value for the chosen action and the Bellman target:
 
 $$
 L(\theta) = \frac{1}{B} \sum_{i=1}^{B} \left(y_i - Q_{policy}(s_i, a_i; \theta)\right)^2
@@ -80,7 +80,7 @@ For each of 4 directions: `(dist_wall, dist_body, dist_green, dist_red)` + 4-bit
 
 ### NNAgent
 PyTorch DQN-style agent:
-- Architecture: `20 → 128 → 128 → 4`
+- Architecture: `21 → 128 → 128 → 4`
 - ReLU activations
 - Experience replay buffer (10 000 transitions)
 - Fixed target network (updated every 500 steps)

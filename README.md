@@ -16,7 +16,29 @@ Reinforcement learning agent for the Snake game using a DQN-style neural agent i
 ├── models/         # Saved model checkpoints
 └── README.md
 ```
+## Bellman Equation
 
+The agent estimates the optimal action-value function with the Bellman optimality equation:
+
+$$
+Q^*(s, a) = \mathbb{E}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
+$$
+
+For each replay transition, the DQN uses this target:
+
+$$
+y = r + \gamma (1 - done) \max_{a'} Q_{target}(s', a')
+$$
+
+Here, $s$ is the current state, $a$ is the chosen action, $r$ is the reward, $s'$ is the next state, and $\gamma$ is the discount factor. The $(1 - done)$ term prevents the agent from estimating future rewards after the snake has died.
+
+The DQN minimizes the mean squared error between the predicted value for the chosen action and the Bellman target:
+
+$$
+L(\theta) = \frac{1}{B} \sum_{i=1}^{B} \left(y_i - Q_{policy}(s_i, a_i; \theta)\right)^2
+$$
+
+Here, $B$ is the mini-batch size. The target network is kept fixed while this loss is calculated, and the optimizer updates only the policy network.
 ---
 
 ## Rules (from spec)

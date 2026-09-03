@@ -1,4 +1,4 @@
-"""Neural-network agent and model loading helpers for Snake."""
+"""Neural-network agent and model loading helpers for the Slither game."""
 
 import random
 from typing import List, Dict, Any
@@ -10,12 +10,13 @@ import torch.optim as optim
 from board import State, Direction, EMPTY, GREEN
 
 N_ACTIONS  = 4
-INPUT_SIZE = 21   # matches State.to_vector() output
+INPUT_SIZE = 21   # matches State.to_vector() output, which is a 20-float vision vector + 1 float for current direction
 
 
 # ══════════════════════════════════════════════════════════════════════
 #  Base Agent
 # ══════════════════════════════════════════════════════════════════════
+
 class BaseAgent:
     def __init__(self,
                  alpha: float        = 0.001,
@@ -27,11 +28,11 @@ class BaseAgent:
         self.alpha         = alpha          # learning rate
         self.gamma         = gamma          # discount factor
         self.epsilon       = epsilon        # current exploration rate
-        self.epsilon_min   = epsilon_min
-        self.epsilon_decay = epsilon_decay
+        self.epsilon_min   = epsilon_min    # minimum exploration rate
+        self.epsilon_decay = epsilon_decay  # decay factor for exploration rate
         self.learning      = learning       # False → pure exploitation, no Q update
-        self.episode       = 0
-        self.total_steps   = 0
+        self.episode       = 0              # current episode number (for logging / saving)
+        self.total_steps   = 0             
 
     # ------------------------------------------------------------------
     # Action selection — ε-greedy

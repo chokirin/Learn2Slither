@@ -66,8 +66,11 @@ class Board:
         for _ in range(1000):
             head_r = random.randint(0, self.SIZE - 1)
             head_c = random.randint(0, self.SIZE - 1)
-            body = [(head_r - i * dr, head_c - i * dc) for i in range(self.INIT_LEN)]
-            if all(0 <= row < self.SIZE and 0 <= col < self.SIZE for row, col in body):
+            body = [(head_r - i * dr, head_c - i * dc)
+                    for i in range(self.INIT_LEN)]
+            if all(
+                    0 <= row < self.SIZE and 0 <= col < self.SIZE
+                    for row, col in body):
                 if len(set(body)) == self.INIT_LEN:
                     self.snake = body
                     self.direction = direction
@@ -150,10 +153,12 @@ class Board:
             return State(vision, self.direction, 0)
 
         head = self.snake[0]
-        vision = {direction: self._cast_ray(head, direction) for direction in Direction}
+        vision = {direction: self._cast_ray(
+            head, direction) for direction in Direction}
         return State(vision, self.direction, len(self.snake))
 
-    def _cast_ray(self, start: Tuple[int, int], direction: Direction) -> List[int]:
+    def _cast_ray(
+            self, start: Tuple[int, int], direction: Direction) -> List[int]:
         dr, dc = DELTA[direction]
         row, col = start
         ray = []
@@ -177,7 +182,8 @@ class Board:
         return ray
 
     def render_vision(self, state: "State"):
-        symbol = {EMPTY: "0", WALL: "W", HEAD: "H", BODY: "S", GREEN: "G", RED: "R"}
+        symbol = {EMPTY: "0", WALL: "W", HEAD: "H",
+                  BODY: "S", GREEN: "G", RED: "R"}
         dir_name = {
             Direction.UP: "UP",
             Direction.DOWN: "DOWN",
@@ -189,7 +195,9 @@ class Board:
             ray = state.vision[direction]
             line = " ".join(symbol[cell] for cell in ray)
             print(f"  {dir_name[direction]:5s}: {line}")
-        print(f"  Direction: {dir_name[self.direction]}  Length: {len(self.snake)}")
+        print(
+            f"  Direction: {dir_name[self.direction]}  "
+            f"Length: {len(self.snake)}")
 
     def render_board(self):
         grid = [["." for _ in range(self.SIZE)] for _ in range(self.SIZE)]
@@ -209,7 +217,9 @@ class Board:
         for row in grid:
             print("|" + " ".join(row) + "|")
         print(border)
-        print(f"Score: {self.score}  Steps: {self.steps}  Length: {len(self.snake)}")
+        print(
+            f"Score: {self.score}  Steps: {self.steps}  "
+            f"Length: {len(self.snake)}")
 
 
 class State:

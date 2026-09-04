@@ -94,8 +94,6 @@ PyTorch DQN-style agent:
 
 ### Train a new model
 
-```bash
-# Neural network, 1000 episodes, graphical display (normal speed)
 python main.py --episodes 1000 --model neural
 python main.py --episodes 1000 --load models/neural_ep500.json --headless --speed fast
 

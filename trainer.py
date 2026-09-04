@@ -1,16 +1,17 @@
 from collections import deque
 import time
 
+
 class Trainer:
     def __init__(self, agent, board, view, config):
-        self.agent  = agent
-        self.board  = board
-        self.view   = view
-        self.cfg    = config        # simple dict or dataclass
-        self.recent_scores  = deque(maxlen=100)
+        self.agent = agent
+        self.board = board
+        self.view = view
+        self.cfg = config        # simple dict or dataclass
+        self.recent_scores = deque(maxlen=100)
         self.recent_lengths = deque(maxlen=100)
-        self.best_length    = 0
-        self.start_time     = time.time()
+        self.best_length = 0
+        self.start_time = time.time()
 
     def run(self):
         for episode in range(self.cfg["episodes"]):
@@ -28,7 +29,7 @@ class Trainer:
             if not self.view.render(self.board, self.agent.stats()):
                 return False
 
-            action               = self.agent.select_action(state)
+            action = self.agent.select_action(state)
             next_state, reward, done = self.board.step(action)
             self.agent.update(state, action, reward, next_state, done)
             state = next_state
@@ -47,16 +48,20 @@ class Trainer:
 
         if (episode + 1) % self.cfg["log_every"] == 0:
             self._log(episode)
-        if self.cfg["save_every"] and (episode + 1) % self.cfg["save_every"] == 0:
+        if (
+            self.cfg["save_every"]
+            and (episode + 1) % self.cfg["save_every"] == 0
+        ):
             self.agent.save(self._checkpoint_path(episode + 1))
 
     def _log(self, episode: int):
-        avg_s = sum(self.recent_scores)  / len(self.recent_scores)
+        avg_s = sum(self.recent_scores) / len(self.recent_scores)
         avg_l = sum(self.recent_lengths) / len(self.recent_lengths)
         print(
             f"Ep {episode+1:>6} | ε={self.agent.epsilon:.4f} | "
             f"AvgScore={avg_s:>7.2f} | AvgLen={avg_l:.2f} | "
-            f"BestLen={self.best_length} | t={time.time()-self.start_time:.0f}s"
+            f"BestLen={self.best_length} | "
+            f"t={time.time()-self.start_time:.0f}s"
         )
 
     def _finalize(self):
@@ -65,4 +70,6 @@ class Trainer:
         self.view.close()
 
     def _checkpoint_path(self, ep: int) -> str:
-        return self.cfg.get("save") or f"models/{self.agent.stats()['type']}_ep{ep}.json"
+        return self.cfg.get("save") or (
+            f"models/{self.agent.stats()['type']}_ep{ep}.json"
+        )

@@ -9,8 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 from board import State, Direction, EMPTY, GREEN
 
-N_ACTIONS  = 4
-INPUT_SIZE = 21   # matches State.to_vector() output, which is a 20-float vision vector + 1 float for current direction
+N_ACTIONS = 4
+INPUT_SIZE = 21   # State.to_vector(): 20 vision floats plus direction.
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -19,20 +19,21 @@ INPUT_SIZE = 21   # matches State.to_vector() output, which is a 20-float vision
 
 class BaseAgent:
     def __init__(self,
-                 alpha: float        = 0.001,
-                 gamma: float        = 0.95,
-                 epsilon: float      = 1.0,
-                 epsilon_min: float  = 0.05,
-                 epsilon_decay: float= 0.99995,
-                 learning: bool      = True):
-        self.alpha         = alpha          # learning rate
-        self.gamma         = gamma          # discount factor
-        self.epsilon       = epsilon        # current exploration rate
-        self.epsilon_min   = epsilon_min    # minimum exploration rate
+                 alpha: float = 0.001,
+                 gamma: float = 0.95,
+                 epsilon: float = 1.0,
+                 epsilon_min: float = 0.05,
+                 epsilon_decay: float = 0.99995,
+                 learning: bool = True):
+        self.alpha = alpha          # learning rate
+        self.gamma = gamma          # discount factor
+        self.epsilon = epsilon        # current exploration rate
+        self.epsilon_min = epsilon_min    # minimum exploration rate
         self.epsilon_decay = epsilon_decay  # decay factor for exploration rate
-        self.learning      = learning       # False → pure exploitation, no Q update
-        self.episode       = 0              # current episode number (for logging / saving)
-        self.total_steps   = 0             
+        self.learning = learning       # False → pure exploitation, no Q update
+        # current episode number (for logging / saving)
+        self.episode = 0
+        self.total_steps = 0
 
     # ------------------------------------------------------------------
     # Action selection — ε-greedy
@@ -46,7 +47,8 @@ class BaseAgent:
         if green_action is not None:
             return green_action
         if self.learning and random.random() < self.epsilon:
-            return random.choice(self._safe_actions(state) or list(range(N_ACTIONS)))
+            safe_actions = self._safe_actions(state)
+            return random.choice(safe_actions or list(range(N_ACTIONS)))
         return self._greedy_action(state)
 
     def _green_action(self, state: State):
@@ -122,12 +124,15 @@ class BaseAgent:
 # ══════════════════════════════════════════════════════════════════════
 #  Neural Network — feed-forward DQN backbone (PyTorch)
 # ══════════════════════════════════════════════════════════════════════
+
+
 class DQN(nn.Module):
     """
     Simple 3-layer MLP.
     Input  : 20 floats (State.to_vector())
     Output : 4 Q-values (one per action)
     """
+
     def __init__(self, input_size: int = INPUT_SIZE,
                  hidden: int = 128, n_actions: int = N_ACTIONS):
         super().__init__()
@@ -151,16 +156,17 @@ class NNAgent(BaseAgent):
     Deep Q-Network (Mnih et al. 2015).
     Two stabilisation tricks on top of plain Q-learning:
       1. Experience replay  — break correlation between consecutive steps
-      2. Target network     — frozen copy of weights, prevents chasing a moving target
+    2. Target network     — frozen copy of weights, preventing moving targets
     """
 
-    BATCH_SIZE         = 64
-    MEMORY_SIZE        = 10_000
+    BATCH_SIZE = 64
+    MEMORY_SIZE = 10_000
     TARGET_UPDATE_FREQ = 500     # steps between target network syncs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu")
 
         # Policy network — trained every step
         self.policy_net = DQN().to(self.device)
@@ -170,8 +176,9 @@ class NNAgent(BaseAgent):
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.alpha)
-        self.loss_fn   = nn.MSELoss()
+        self.optimizer = optim.Adam(
+            self.policy_net.parameters(), lr=self.alpha)
+        self.loss_fn = nn.MSELoss()
 
         self.memory: deque = deque(maxlen=self.MEMORY_SIZE)
         self._steps_since_target = 0
@@ -219,19 +226,27 @@ class NNAgent(BaseAgent):
         batch = random.sample(self.memory, self.BATCH_SIZE)
         states, actions, rewards, next_states, dones = zip(*batch)
 
-        S  = torch.tensor(states,      dtype=torch.float32).to(self.device)  # (B, 21)
-        NS = torch.tensor(next_states, dtype=torch.float32).to(self.device)  # (B, 21)
-        A  = torch.tensor(actions,     dtype=torch.long).to(self.device)     # (B,)
-        R  = torch.tensor(rewards,     dtype=torch.float32).to(self.device)  # (B,)
-        D  = torch.tensor(dones,       dtype=torch.float32).to(self.device)  # (B,)
+        S = torch.tensor(states,      dtype=torch.float32).to(
+            self.device)  # (B, 21)
+        NS = torch.tensor(next_states, dtype=torch.float32).to(
+            self.device)  # (B, 21)
+        A = torch.tensor(actions,     dtype=torch.long).to(
+            self.device)     # (B,)
+        R = torch.tensor(rewards,     dtype=torch.float32).to(
+            self.device)  # (B,)
+        D = torch.tensor(dones,       dtype=torch.float32).to(
+            self.device)  # (B,)
 
         # Q(s, a) — only the action that was actually taken
-        q_pred = self.policy_net(S).gather(1, A.unsqueeze(1)).squeeze(1)     # (B,)
+        q_pred = self.policy_net(S).gather(
+            1, A.unsqueeze(1)).squeeze(1)     # (B,)
 
         # Bellman target using the frozen target network
         with torch.no_grad():
-            q_next = self.target_net(NS).max(dim=1).values                   # (B,)
-        q_target = R + self.gamma * q_next * (1.0 - D)                      # (B,)
+            q_next = self.target_net(NS).max(
+                dim=1).values                   # (B,)
+        q_target = R + self.gamma * q_next * \
+            (1.0 - D)                      # (B,)
 
         loss = self.loss_fn(q_pred, q_target)
         self.optimizer.zero_grad()
@@ -279,20 +294,22 @@ class NNAgent(BaseAgent):
 
     @classmethod
     def load(cls, path: str, learning: bool = True) -> "NNAgent":
-        data  = torch.load(path, map_location="cpu")
-        assert data["type"] == "neural", f"Expected neural model, got {data['type']}"
-        hp    = data["hyperparams"]
+        data = torch.load(path, map_location="cpu")
+        assert data["type"] == "neural", (
+            f"Expected neural model, got {data['type']}"
+        )
+        hp = data["hyperparams"]
         agent = cls(learning=learning, **hp)
         agent.policy_net.load_state_dict(data["weights"])
         agent.target_net.load_state_dict(data["weights"])
-        agent.episode     = data["stats"]["episode"]
+        agent.episode = data["stats"]["episode"]
         agent.total_steps = data["stats"]["total_steps"]
         print(f"[NN] Loaded ← {path}  (ep {agent.episode})")
         return agent
 
     def stats(self) -> Dict[str, Any]:
         s = super().stats()
-        s["type"]   = "neural"
+        s["type"] = "neural"
         s["memory"] = len(self.memory)
         s["device"] = str(self.device)
         return s
@@ -306,7 +323,8 @@ def make_agent(model_type: str = "neural",
     """Instantiate the neural agent."""
     if model_type == "neural":
         return NNAgent(learning=learning, **kwargs)
-    raise ValueError(f"Unknown model type: '{model_type}'. Only 'neural' is supported.")
+    raise ValueError(
+        f"Unknown model type: '{model_type}'. Only 'neural' is supported.")
 
 
 def load_agent(path: str, learning: bool = True) -> BaseAgent:
@@ -315,8 +333,14 @@ def load_agent(path: str, learning: bool = True) -> BaseAgent:
         meta = torch.load(path, map_location="cpu")
         model_type = meta.get("type")
     except Exception:
-        raise ValueError("Invalid neural checkpoint. Legacy checkpoints are no longer supported.")
+        raise ValueError(
+            "Invalid neural checkpoint. Legacy checkpoints are no longer "
+            "supported."
+        )
 
     if model_type == "neural":
         return NNAgent.load(path, learning=learning)
-    raise ValueError(f"Unsupported model type in file: '{model_type}'. Only neural checkpoints are supported.")
+    raise ValueError(
+        f"Unsupported model type in file: '{model_type}'. Only neural "
+        "checkpoints are supported."
+    )

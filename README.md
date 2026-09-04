@@ -97,9 +97,10 @@ PyTorch DQN-style agent:
 ```bash
 # Neural network, 1000 episodes, graphical display (normal speed)
 python main.py --episodes 1000 --model neural
+python main.py --episodes 1000 --load models/neural_ep500.json --headless --speed fast
 
 # Neural network, headless (fast), save every 500 eps
-python main.py --episodes 5000 --model neural --headless --save-every 500n.
+python main.py --episodes 2000 --model neural --headless --speed fast --save-every 500
 
 # Neural network, step-by-step mode (press SPACE to advance)
 python main.py --episodes 10 --model neural --speed step
@@ -113,12 +114,12 @@ python main.py --episodes 20 --model neural --speed slow
 ```bash
 python main.py --episodes 1000 --load models/neural_ep20.json
 ```
-
 ### Evaluate (no learning)
 
 ```bash
-python main.py --episodes 100 --load models/neural_ep20.json --no-learn --speed normal
-```
+python main.py --episodes 100 --load models/neural.json --no-learn --speed normal
+python main.py --episodes 100 --load models/neural_ep20.json --no-learn --headless --speed fast
+python main.py --episodes 100 --load models/neural_ep1000.json --no-learn --speed normal
 
 When `--load` is provided, the checkpoint must be a neural model. Use `--model neural` when starting from scratch.
 

@@ -25,12 +25,13 @@ class BaseAgent:
                  epsilon_min: float = 0.05,
                  epsilon_decay: float = 0.99995,
                  learning: bool = True):
-        self.alpha = alpha          # learning rate
-        self.gamma = gamma          # discount factor
-        self.epsilon = epsilon        # current exploration rate
-        self.epsilon_min = epsilon_min    # minimum exploration rate
-        self.epsilon_decay = epsilon_decay  # decay factor for exploration rate
-        self.learning = learning       # False → pure exploitation, no Q update
+        """Initialize the agent with the given parameters."""
+        self.alpha = alpha         
+        self.gamma = gamma          
+        self.epsilon = epsilon        
+        self.epsilon_min = epsilon_min    
+        self.epsilon_decay = epsilon_decay 
+        self.learning = learning     
         # current episode number (for logging / saving)
         self.episode = 0
         self.total_steps = 0

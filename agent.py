@@ -26,12 +26,12 @@ class BaseAgent:
                  epsilon_decay: float = 0.99995,
                  learning: bool = True):
         """Initialize the agent with the given parameters."""
-        self.alpha = alpha         
-        self.gamma = gamma          
-        self.epsilon = epsilon        
-        self.epsilon_min = epsilon_min    
-        self.epsilon_decay = epsilon_decay 
-        self.learning = learning     
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.learning = learning
         # current episode number (for logging / saving)
         self.episode = 0
         self.total_steps = 0
